@@ -1,4 +1,3 @@
-// use std::env;
 use tantivy::schema::*;
 use tantivy::{doc, Index};
 use tantivy::collector::TopDocs;
@@ -114,49 +113,6 @@ pub fn update_index_with_new_files(index_path: &str, folder_path: &str, last_ind
     Ok(())
 }
 
-
-// Function to update the index with new files added after the last index modification time
-// pub fn update_index_with_new_files(index_path: &str, folder_path: &str, last_index_time: SystemTime) -> tantivy::Result<()> {
-//     let index = Index::open_in_dir(index_path)?;
-//     let schema = index.schema();
-//     let path_field = schema.get_field("path").unwrap();
-//     let contents_field = schema.get_field("contents").unwrap();
-//     let mut index_writer = index.writer(15_000_000)?;
-
-//     let start_time = Instant::now();
-//     // Recursively read files from the folder
-//     for entry in WalkDir::new(folder_path).into_iter().filter_map(|e| e.ok()) {
-//         if entry.file_type().is_file() {
-//             let path = entry.path();
-//             let metadata = metadata(path)?;
-//             let modified_time = metadata.modified()?;
-
-//             // Check if the file was modified after the last index time
-//             if modified_time > last_index_time {
-//                 let path_str = path.display().to_string();
-//                 if let Ok(contents) = fs::read_to_string(path) {
-//                     // Optionally, limit the size of the contents
-//                     let limited_contents = if contents.len() > 10_000_000 {
-//                         &contents[..10_000_000]
-//                     } else {
-//                         &contents
-//                     };
-//                     let _ = index_writer.add_document(doc!(
-//                         path_field => path_str.clone(),
-//                         contents_field => limited_contents,
-//                     ));
-//                     println!("Added new file to index: {}", path_str);
-//                 }
-//             }
-//         }
-//     }
-
-//     // Commit the index
-//     index_writer.commit()?;
-//     println!("Time taken to add file to index: {:?}", start_time.elapsed());
-//     Ok(())
-// }
-
 pub fn create_index_from_folder(index_path: &str, folder_path: &str) -> tantivy::Result<SystemTime> {
     // Start the timer
     let start_time = Instant::now();
@@ -204,8 +160,6 @@ pub fn create_index_from_folder(index_path: &str, folder_path: &str) -> tantivy:
                 } else {
                     &contents
                 };
-                // let limited_contents_with_path = String::from(format!("{}\n{}", path, limited_contents));
-                // println!("Path added: {:?}", path);
                 let _ = index_writer.add_document(doc!(
                     schema.get_field("path").unwrap() => path,
                     schema.get_field("contents").unwrap() => String::from(limited_contents),
@@ -288,66 +242,6 @@ pub fn search_terms_in_index(index_path: &str, terms: &[&str]) -> tantivy::Resul
 
     Ok(results)
 }
-
-// pub fn search_phrases_in_index(index_path: &str, phrases: &[&str]) -> tantivy::Result<Vec<(String, String)>> {
-//     let mut results = Vec::new();
-
-//     // Open the index
-//     let index = Index::open_in_dir(index_path)?;
-
-//     // Load the index schema
-//     let schema = index.schema();
-//     let path_field = schema.get_field("path").unwrap();
-//     let contents_field = schema.get_field("contents").unwrap();
-
-//     // Create a searcher
-//     let reader = index
-//         .reader_builder()
-//         .reload_policy(ReloadPolicy::Manual)
-//         .try_into()?;
-//     let searcher = reader.searcher();
-
-//     let start_time = Instant::now();
-//     // Parse the query
-//     for &phrase in phrases {
-//         println!("looking for {}", phrase);
-//         let query_whitespace_split: Vec<&str> = phrase.split_whitespace().collect();
-//         let terms: Vec<Term> = query_whitespace_split.iter().map(|term| Term::from_field_text(contents_field, term)).collect();
-//         println!("looking for {:?}", terms);
-//         let query = PhraseQuery::new(terms);
-//         println!("looking for {:?}", query);
-//         // Search for the top 10000 documents
-//         let top_docs = searcher.search(&query, &TopDocs::with_limit(10000))?;
-//         // Iterate over the search results and store them in the results vector
-//         for (_score, doc_address) in top_docs {
-//             println!("found term");
-//             let retrieved_doc : TantivyDocument = searcher.doc(doc_address)?;
-
-//             let path = retrieved_doc.get_first(path_field).and_then(|value| {
-//                 if let tantivy::schema::OwnedValue::Str(ref text) = value {
-//                     Some(text.as_str())
-//                 } else {
-//                     None
-//                 }
-//             }).unwrap_or("").to_string();
-
-//             let contents = retrieved_doc.get_first(contents_field).and_then(|value| {
-//                 if let tantivy::schema::OwnedValue::Str(ref text) = value {
-//                     Some(text.as_str())
-//                 } else {
-//                     None
-//                 }
-//             }).unwrap_or("").to_string();
-
-//             results.push((path, contents));
-//         }
-//     }
-//     // Measure the elapsed time
-//     let duration = start_time.elapsed();
-//     println!("Time taken to search phrase: {:?}", duration);
-
-//     Ok(results)
-// }
 
 pub fn search_phrases_in_index(index_path: &str, phrases: &[&str]) -> tantivy::Result<Vec<(String, String)>> {
     let mut results = Vec::new();
