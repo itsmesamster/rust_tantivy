@@ -1,0 +1,18 @@
+[package]
+name = "rust_tantivy"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "rust_tantivy"
+crate-type = ["lib"]
+path = "src/lib.rs"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tantivy = "0.22.0"
+regex = "1.10.4"
+log = "0.4.21"
+walkdir = "2.3.2"
+htmlescape = "0.3.1"
